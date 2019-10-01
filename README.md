@@ -10,4 +10,4 @@ $ qemu-system-<i386|x86_64> -hda boot.img
 ```
 
 Which should result in output like the following:
-![screenshot](https://user-images.githubusercontent.com/12636891/65946766-d705e280-e404-11e9-92d2-0abeb4f59641.png)
+![screenshot](https://user-images.githubusercontent.com/12636891/65947844-15040600-e407-11e9-877a-76e7dd11bfa7.png)
