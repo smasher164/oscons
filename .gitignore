@@ -5,5 +5,5 @@
 
 # Whitelist the following extensions
 !*.md
-!*.s
+!*.asm
 !.gitignore

@@ -5,7 +5,7 @@ This branch contains a BIOS-based bootloader for x86 that prints "Hello, World!"
 QEMU can be used to execute the flat binary file by treating it as a disk. Either qemu-system-i386 or qemu-system-x86_64 can be used to run the disk image. The following commands can be used to build and run the bootloader in QEMU:
 
 ```
-$ yasm -f bin boot.s -o boot.img
+$ yasm -f bin boot.asm -o boot.img
 $ qemu-system-<i386|x86_64> -hda boot.img
 ```
 
