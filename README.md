@@ -6,7 +6,7 @@ QEMU can be used to execute the flat binary file by treating it as a disk. Eithe
 
 ```
 $ yasm -f bin boot.asm -o boot.img
-$ qemu-system-<i386|x86_64> -hda boot.img
+$ qemu-system-<i386|x86_64> -drive format=raw,file=boot.img
 ```
 
 Which should result in output like the following:
