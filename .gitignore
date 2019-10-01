@@ -1,0 +1,8 @@
+# Ignore everything
+*
+# Whitelist subdirectories
+!*/
+
+# Whitelist the following extensions
+!*.md
+!.gitignore
