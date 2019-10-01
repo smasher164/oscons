@@ -14,7 +14,7 @@
 .loop:
     lodsb                             ; al = *HELLO_STRING; HELLO_STRING++.
     cmp          al, 0
-    jz           end                  ; if (al == 0) goto end
+    je           end                  ; if (al == 0) goto end
     int          0x10                 ; execute the interrupt for video services
     jmp          .loop
 
