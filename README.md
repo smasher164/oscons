@@ -9,5 +9,8 @@ $ yasm -f bin boot.asm -o boot.img
 $ qemu-system-<i386|x86_64> -drive format=raw,file=boot.img
 ```
 
-Which should result in output like the following:
-![screenshot](https://user-images.githubusercontent.com/12636891/65947844-15040600-e407-11e9-877a-76e7dd11bfa7.png)
+Successful boot into protected mode should result in output like:
+![success](https://user-images.githubusercontent.com/12636891/66259375-52a5bd80-e77e-11e9-8ad9-91f7bc074738.png)
+
+Whereas failure to boot into protected mode should result in output like:
+![failure](https://user-images.githubusercontent.com/12636891/66259384-5e917f80-e77e-11e9-9bb0-e510804d2da4.png)
