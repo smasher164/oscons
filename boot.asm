@@ -116,7 +116,7 @@ waitIO:
 ; Check that the A20 line has been enabled. It works by writing a 0x00 byte to
 ; 0x0000:0x0500 and 0xFF byte to 0xFFFF:0x0510. If the byte at 0x0000:0x0500 is
 ; 0xFF, then the access wraps around, and the A20 line has not been enabled. The
-; values at these addresses are saved and restored allow this function to be
+; values at these addresses are saved and restored to allow this function to be
 ; re-run.
 checkA20:
     push         ds
