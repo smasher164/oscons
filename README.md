@@ -10,4 +10,4 @@ $ qemu-system-<i386|x86_64> -drive format=raw,file=boot.img
 ```
 
 Which should result in output like the following:
-![screenshot](https://user-images.githubusercontent.com/12636891/65947844-15040600-e407-11e9-877a-76e7dd11bfa7.png)
+![screenshot](https://user-images.githubusercontent.com/12636891/66261025-960b2680-e794-11e9-8982-1b473261ed10.png)
