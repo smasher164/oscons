@@ -62,7 +62,7 @@ protectedMode:
     lodsb
     cmp          al, 0
     je           end
-    or           eax,0xF00         ; Set attribute color to white.
+    or           ah,0xF            ; Set attribute color to white.
     mov          [ebx], ax         ; Write attribute+character to video memory.
     add          ebx, 2            ; Move to next position.
     jmp          .loopSuccess
