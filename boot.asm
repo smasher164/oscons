@@ -4,7 +4,6 @@
 ; https://yasm.tortall.net.
 
     bits         16                   ; Tell YASM these are 16-bit instructions
-    org          0x7C00               ; Tell YASM to load bootloader at 0x7C00
     mov          si, HELLO_STRING     ; si = HELLO_STRING
     mov          ah, 0x0E             ; set interrupt handler to TTY printer
 
@@ -22,5 +21,3 @@ end:
     hlt                               ; exit bootloader
 
 HELLO_STRING: db "Hello, World!", 0   ; Declare NULL-terminated string constant
-    times 510 - ($-$$) db 0           ; Zero out the remaining of the 512 bytes
-    dw           0xAA55               ; Set last two bytes to signature
