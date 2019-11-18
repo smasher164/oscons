@@ -5,7 +5,6 @@
 ; YASM, available at https://yasm.tortall.net.
 
     bits         16                ; Tell YASM these are 16-bit instructions
-    org          0x7c00            ; Tell YASM to load bootloader at 0x7C00
 
 ; Set Video Mode to support 80x25 16 color text (AH=0,AL=3). Do this in advance,
 ; to enable drawing in protected mode as well.
@@ -188,6 +187,3 @@ GDT_ADDR:
 
 FAILED_STRING: db "Failed to Enter Protected Mode.", 0
 SUCCESS_STRING: db "Successfully Entered Protected Mode.", 0
-
-    times 510 - ($-$$) db 0        ; Zero out the remaining of the 512 bytes
-    dw           0xAA55            ; Set last two bytes to signature
