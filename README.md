@@ -1,8 +1,8 @@
 # OS Construction
 
-This branch contains a BIOS-based bootloader for x86 that prints "Hello, World!" to the screen. YASM is used to assemble the source, and is available at https://yasm.tortall.net. clang+lld are used to link the binary, and objcopy is used to strip its ELF headers. These commands can be found in LLVM at https://clang.llvm.org/, https://lld.llvm.org/ and https://llvm.org/docs/CommandGuide/llvm-objcopy.html. For convenience, I have provided a [Dockerfile](Dockerfile) that installs and configures these tools. Its image is hosted as smasher164/oscons:booting on hub.docker.com.
+This branch contains a BIOS-based bootloader for x86 that prints "Hello, World!" to the screen. [YASM](https://yasm.tortall.net) is used to assemble the source, [clang](https://clang.llvm.org/)+[lld](https://lld.llvm.org/) are used to link the binary, and [objcopy](https://llvm.org/docs/CommandGuide/llvm-objcopy.html) is used to strip its ELF headers. For convenience, I have installed and configured these tools in a [Dockerfile](Dockerfile), whose image can be pulled as [smasher164/oscons:booting](https://hub.docker.com/r/smasher164/oscons/tags).
 
-QEMU is used to emulate the hardware and BIOS necessary to run the bootloader, and is available at https://www.qemu.org/. It can be used to execute the flat binary file by treating it as a disk. Use qemu-system-i386 or qemu-system-x86_64 to run the disk image. The following commands can be used to build and run the bootloader in QEMU:
+QEMU is used to emulate the hardware and BIOS necessary to run the bootloader, and is available at https://www.qemu.org/. It can be used to execute the flat binary file by treating it as a disk. Use `qemu-system-i386` or `qemu-system-x86_64` to run the disk image. The following commands can be used to build and run the bootloader in QEMU:
 
 ```
 $ yasm --oformat=elf boot.asm -o boot.o
