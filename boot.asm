@@ -6,6 +6,9 @@
 
     bits         16                ; Tell YASM these are 16-bit instructions
 
+global _start                      ; Export the _start symbol
+_start:
+
 ; Set Video Mode to support 80x25 16 color text (AH=0,AL=3). Do this in advance,
 ; to enable drawing in protected mode as well.
 
