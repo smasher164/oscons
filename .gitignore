@@ -7,4 +7,5 @@
 !*.md
 !*.asm
 !*.ld
+!Dockerfile
 !.gitignore
