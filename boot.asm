@@ -3,7 +3,12 @@
 ; the screen. This file should be assembled with YASM, available at
 ; https://yasm.tortall.net.
 
-    bits         16                   ; Tell YASM these are 16-bit instructions
+; Tell YASM these are 16-bit instructions
+bits 16
+
+; Export the _start symbol
+global _start
+_start:
     mov          si, HELLO_STRING     ; si = HELLO_STRING
     mov          ah, 0x0E             ; set interrupt handler to TTY printer
 
