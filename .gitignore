@@ -3,7 +3,10 @@
 # Whitelist subdirectories
 !*/
 
-# Whitelist the following extensions
+# Whitelisted files
+Makefile
+
+# Whitelisted extensions
 !*.md
 !*.asm
 !*.nix
