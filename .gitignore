@@ -4,7 +4,7 @@
 !*/
 
 # Whitelisted files
-Makefile
+!Makefile
 
 # Whitelisted extensions
 !*.md
