@@ -16,7 +16,7 @@
       in {
         devShell = pkgs.mkShell {
           depsBuildBuild = with pkgs.pkgsBuildBuild; [ qemu ];
-          nativeBuildInputs = with pkgs.pkgsBuildHost; [ clangStdenv yasm ];
+          nativeBuildInputs = with pkgs.pkgsBuildHost; [ yasm ];
         };
       });
 }
