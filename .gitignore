@@ -7,4 +7,5 @@
 !*.md
 !*.asm
 !*.nix
+!*.lock
 !.gitignore
