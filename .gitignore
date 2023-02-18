@@ -3,9 +3,12 @@
 # Whitelist subdirectories
 !*/
 
-# Whitelist the following extensions
+# Whitelisted files
+!Makefile
+
+# Whitelisted extensions
 !*.md
 !*.asm
-!*.ld
-!Dockerfile
+!*.nix
+!*.lock
 !.gitignore
