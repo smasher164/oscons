@@ -34,3 +34,9 @@ end:
     ret                               ; return from function
 
 HELLO_STRING: db "Hello, World!", 0   ; Declare NULL-terminated string constant
+
+; Zero out the remaining of the 512 bytes and
+; set the last two bytes to the signature.
+
+    times 510 - ($-$$) db 0
+    dw 0xAA55
