@@ -8,6 +8,11 @@
 
 global _start                      ; Export the _start symbol
 _start:
+    xor          ax, ax            ; clear ax
+    mov          ds, ax
+    mov          es, ax
+    mov          ss, ax
+    mov          sp, 0x7C00        ; set stack pointer to top of stack
 
 ; Set Video Mode to support 80x25 16 color text (AH=0,AL=3). Do this in advance,
 ; to enable drawing in protected mode as well.
@@ -21,6 +26,10 @@ _start:
 ; permissions and attributes for a region of memory.
 
     lgdt         [GDT_ADDR]
+
+; Load an empty Interrupt Descriptor Table (IDT).
+
+    lidt         [IDT_ADDR]
 
 ; Try enabling the A20 line. If it fails, print an error message and exit
 ; bootloader.
@@ -185,7 +194,12 @@ gdt:
 GDT_ADDR:
     dw           24-1              ; Limit = size of GDT - 1
     dd           gdt               ; Address of gdt
-    
+
+; Define an empty IDT.
+IDT_ADDR:
+    dw           0
+    dd           0
+
 ; Declare NULL-terminated string constants.
 
 FAILED_STRING: db "Failed to Enter Protected Mode.", 0
