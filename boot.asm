@@ -204,3 +204,9 @@ IDT_ADDR:
 
 FAILED_STRING: db "Failed to Enter Protected Mode.", 0
 SUCCESS_STRING: db "Successfully Entered Protected Mode.", 0
+
+; Zero out the remaining of the 512 bytes and
+; set the last two bytes to the signature.
+
+    times 510 - ($-$$) db 0
+    dw 0xAA55
