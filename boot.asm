@@ -34,8 +34,7 @@ _start:
 
     lgdt         [GDT_ADDR]
 
-; Try enabling the A20 line. If it fails, print an error message and exit
-; bootloader.
+; Try enabling the A20 line. If it fails, print an error message and spin forever.
 
     call         enableA20
     cmp          ax, 0
@@ -98,7 +97,7 @@ tryRead:
     mov          ax, 0
     ret
 
-; Print the failure string and exit bootloader when A20 could not be enabled.
+; Print the failure string and spin forever.
 printError:
     mov          ah, 0x0E          ; set the interrupt handler to TTY printer
 .loop:
@@ -250,7 +249,7 @@ READ_ERROR_STRING: db "Error reading from disk.", 0
     times 510 - ($-$$) db 0
     dw 0xAA55
 
-; Print SUCCESS_STRING and exit bootloader.
+; Print SUCCESS_STRING and spin forever.
     mov          esi, SUCCESS_STRING
     mov          ebx, 0xB8000      ; Set pointer to video memory (color).
 .loop:
