@@ -5,20 +5,27 @@
 ; YASM, available at https://yasm.tortall.net.
 
     bits         16                ; Tell YASM these are 16-bit instructions
+    section      .text
 
 global _start                      ; Export the _start symbol
 _start:
-    xor          ax, ax            ; clear ax
+    cli                            ; Disable interrupts
+
+    xor          ax, ax            ; Clear ax
     mov          ds, ax
     mov          es, ax
     mov          ss, ax
-    mov          sp, 0x7C00        ; set stack pointer to top of stack
+    mov          sp, 0x7C00        ; Set stack pointer to top of stack
 
 ; Set Video Mode to support 80x25 16 color text (AH=0,AL=3). Do this in advance,
 ; to enable drawing in protected mode as well.
 
     mov          ax, 0x3
     int          0x10
+
+; Load 2nd stage bootloader into memory. That's 24 sectors (12K) to the address 0x7e00.
+
+    call         read
 
 ; Load the Global Descriptor Table (GDT). See the gdt and GDT_ADDR labels below
 ; for details on its layout. The GDT contains information needed for the CPU to
@@ -27,23 +34,21 @@ _start:
 
     lgdt         [GDT_ADDR]
 
-; Load an empty Interrupt Descriptor Table (IDT).
-
-    lidt         [IDT_ADDR]
-
 ; Try enabling the A20 line. If it fails, print an error message and exit
 ; bootloader.
 
     call         enableA20
     cmp          ax, 0
-    je           failedA20
+    jne          a20Enabled
+    mov          si, FAILED_STRING
+    jmp          printError
 
 ; It is now possible to jump into protected mode. Disable interrupts, and
 ; set the protected mode bit on the special CPU register CR0.
 
-    cli
+a20Enabled:
     mov          eax, cr0
-    or           eax,0x1
+    or           eax, 0x1
     mov          cr0, eax
 
 ; Jump to the code segment defined in the GDT.
@@ -51,34 +56,60 @@ _start:
 
     jmp          0x8:protectedMode 
 
-; Print the failure string and exit bootloader when A20 could not be enabled.
-failedA20:
-    mov          si, FAILED_STRING ; si = FAILED_STRING
-    mov          ah, 0x0E          ; set the interrupt handler to TTY printer
-.loopFailedA20:
-    lodsb                          ; al = *FAILED_STRING; FAILED_STRING++.
-    cmp          al, 0
-    je           endFailedA20      ; if (al == 0) goto endFailedA20
-    int          0x10              ; execute the interrupt for video services
-    jmp          .loopFailedA20
-endFailedA20:
-    hlt
+read:
+    pusha
+    ; try reading up to 3 times
+    mov          cx, 3
+.loopRead:
+    ; if we've tried 3 times, print an error message and exit bootloader
+    cmp          cx, 0
+    je           .errorRead
+    call         tryRead
+    cmp          ax, 0
+    jne          .successRead
+    dec          cx
+    jmp          .loopRead
+.errorRead:
+    mov          si, READ_ERROR_STRING
+    jmp         printError
+.successRead:
+    popa
+    ret
 
-; Entered Protected Mode. Print SUCCESS_STRING and exit bootloader.
-protectedMode:
-    bits         32                ; Tell YASM these are 32-bit instructions
-    mov          esi, SUCCESS_STRING
-    mov          ebx, 0xB8000      ; Set pointer to video memory (color).
-.loopSuccess
-    lodsb
+tryRead:
+    pusha
+    mov          ah, 0x2           ; read
+    mov          al, 0x18          ; 24 sectors for 12k
+    mov          ch, 0             ; starting at cylinder 0
+    mov          cl, 0x02          ; starting at sector 2
+    mov          dh, 0             ; starting at head 0
+    mov          bx, 0x7e00        ; load into memory at 0x7e00
+                                   ; dl already has drive number
+
+    int          0x13              ; fire interrupt
+    jc           .error            ; if carry flag is set, error
+    cmp          al, 0x18          ; check if we read 24 sectors
+    jne          .error
+    popa
+    mov          ax, 1             ; success
+    ret
+.error:
+    popa
+    mov          ax, 0
+    ret
+
+; Print the failure string and exit bootloader when A20 could not be enabled.
+printError:
+    mov          ah, 0x0E          ; set the interrupt handler to TTY printer
+.loop:
+    lodsb                          ; al = *si; si++.
     cmp          al, 0
-    je           end
-    or           ah,0xF            ; Set attribute color to white.
-    mov          [ebx], ax         ; Write attribute+character to video memory.
-    add          ebx, 2            ; Move to next position.
-    jmp          .loopSuccess
-end:
-    hlt
+    je           .end              ; if (al == 0) goto .end
+    int          0x10              ; execute the interrupt for video services
+    jmp          .loop
+.end:
+    jmp $
+
 
 ; Enable the A20 line. This removes the restriction of only addressing at most
 ; 1MB and enables the ability to address up to 4GB. The reason for this
@@ -150,6 +181,19 @@ checkA20__exit:
     pop          ds
     ret
 
+; Entered Protected Mode.
+protectedMode:
+    bits         32                ; Tell YASM these are 32-bit instructions
+    ; Set up the stack
+    mov          eax, 0x10         ; The data segment selector is 0x10.
+    mov          ds, eax
+    mov          es, eax
+    mov          fs, eax
+    mov          gs, eax
+    mov          ss, eax
+    mov          esp, stack_end    ; Set the stack pointer (stack grows down).
+    jmp          0x7e00            ; Jump to the second sector.
+
 ; Each definition in the GDT is an 8-byte descriptor. They are respectively, a
 ; NULL descriptor, code segment descriptor, and data segment descriptor.
 gdt:
@@ -195,18 +239,37 @@ GDT_ADDR:
     dw           24-1              ; Limit = size of GDT - 1
     dd           gdt               ; Address of gdt
 
-; Define an empty IDT.
-IDT_ADDR:
-    dw           0
-    dd           0
-
 ; Declare NULL-terminated string constants.
 
 FAILED_STRING: db "Failed to Enter Protected Mode.", 0
-SUCCESS_STRING: db "Successfully Entered Protected Mode.", 0
+READ_ERROR_STRING: db "Error reading from disk.", 0
 
 ; Zero out the remaining of the 512 bytes and
 ; set the last two bytes to the signature.
 
     times 510 - ($-$$) db 0
     dw 0xAA55
+
+; Print SUCCESS_STRING and exit bootloader.
+    mov          esi, SUCCESS_STRING
+    mov          ebx, 0xB8000      ; Set pointer to video memory (color).
+.loop:
+    lodsb
+    cmp          al, 0
+    je           .end
+    or           ah,0xF            ; Set attribute color to white.
+    mov          [ebx], ax         ; Write attribute+character to video memory.
+    add          ebx, 2            ; Move to next position.
+    jmp          .loop
+.end:
+    jmp $
+
+SUCCESS_STRING: db "Successfully Entered Protected Mode Outside MBR.", 0
+
+; Declare the start and end of the stack in the .bss section
+
+    section .bss
+
+stack_begin:
+    resb 4096                      ; Reserve 4 KiB of stack space
+stack_end:
