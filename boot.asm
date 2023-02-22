@@ -266,8 +266,7 @@ READ_ERROR_STRING: db "Error reading from disk.", 0
 
 SUCCESS_STRING: db "Successfully Entered Protected Mode Outside MBR.", 0
 
-; Declare the start and end of the stack in the .bss section
-
+; Declare the start and end of the stack in the .bss section.
     section .bss
 
 stack_begin:
