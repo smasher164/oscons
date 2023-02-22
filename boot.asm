@@ -71,7 +71,7 @@ read:
     jmp          .loop
 .error:
     mov          si, READ_ERROR_STRING
-    jmp         printError
+    jmp          printError
 .success:
     popa
     ret
