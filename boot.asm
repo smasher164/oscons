@@ -249,6 +249,7 @@ READ_ERROR_STRING: db "Error reading from disk.", 0
     times 510 - ($-$$) db 0
     dw 0xAA55
 
+; At address 0x7e00, the second sector of the disk is loaded.
 ; Print SUCCESS_STRING and spin forever.
     mov          esi, SUCCESS_STRING
     mov          ebx, 0xB8000      ; Set pointer to video memory (color).
