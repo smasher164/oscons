@@ -60,19 +60,19 @@ read:
     pusha
     ; try reading up to 3 times
     mov          cx, 3
-.loopRead:
+.loop:
     ; if we've tried 3 times, print an error message and exit bootloader
     cmp          cx, 0
-    je           .errorRead
+    je           .error
     call         tryRead
     cmp          ax, 0
-    jne          .successRead
+    jne          .success
     dec          cx
-    jmp          .loopRead
-.errorRead:
+    jmp          .loop
+.error:
     mov          si, READ_ERROR_STRING
     jmp         printError
-.successRead:
+.success:
     popa
     ret
 
