@@ -43,8 +43,8 @@ _start:
     mov          si, FAILED_STRING
     jmp          printError
 
-; It is now possible to jump into protected mode. Disable interrupts, and
-; set the protected mode bit on the special CPU register CR0.
+; It is now possible to jump into protected mode. Set the
+; protected mode bit on the special CPU register CR0.
 
 a20Enabled:
     mov          eax, cr0
