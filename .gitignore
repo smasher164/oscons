@@ -3,6 +3,15 @@
 # Whitelist subdirectories
 !*/
 
-# Whitelist the following extensions
+# Whitelisted files
+!Makefile
+
+# Whitelisted extensions
 !*.md
+!*.rs
+!*.toml
+!*.json
+!*.ld
+!*.nix
+!*.lock
 !.gitignore

@@ -1,0 +1,18 @@
+{
+    "llvm-target": "i386-unknown-none-elf",
+    "target-endian": "little",
+    "target-pointer-width": "16",
+    "target-c-int-width": "16",
+    "data-layout": "e-m:e-p:16:16-i8:8-i16:16-i32:32-i64:64-f32:32-f64:64-n8:16-a:0:16-S16",
+    "arch": "x86",
+    "os": "none",
+    "env": "",
+    "vendor": "unknown",
+    "executables": true,
+    "linker-flavor": "ld.lld",
+    "linker": "ld.lld",
+    "panic-strategy": "abort",
+    "disable-redzone": true,
+    "features": "+16bit-mode,-sse,-mmx,+soft-float",
+    "max-atomic-width": 16
+}

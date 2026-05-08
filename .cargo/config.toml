@@ -1,0 +1,9 @@
+[build]
+target = "i386-none-16bit.json"
+
+[target.i386-none-16bit]
+rustflags = ["-C", "link-arg=-Tlinker.ld"]
+
+[unstable]
+build-std = ["core"]
+build-std-features = ["compiler-builtins-mem"]
