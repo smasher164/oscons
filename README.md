@@ -1,9 +1,9 @@
 # OS Construction
 
-This repository serves as a companion to my blog series, "Notes on OS Construction."
-All code is on separate branches and will also be linked below for easy access, as I add them.
-Additionally, all code is released to the public domain (see the LICENSE.md file).
+This branch contains a BIOS-based bootloader for x86 that prints "Hello, World!" to the screen, written in Rust. [Cargo](https://doc.rust-lang.org/cargo/) is used to build the source against a custom [`i386-unknown-none-code16`](i386-none-16bit.json) target, which instructs LLVM to emit 16-bit x86 code suitable for real mode. `objcopy` is used to strip the ELF headers from the resulting binary. For convenience, these tools are configured in a [flake.nix](flake.nix) file, which can be run using [Nix](https://nixos.org/).
 
-1. [BIOS-based Hello World Bootloader](https://github.com/smasher164/oscons/tree/boot-bios-helloworld)
-2. [BIOS-based Bootloader entering Protected Mode](https://github.com/smasher164/oscons/tree/boot-bios-protected)
-3. [BIOS-based Bootloader loading another sector](https://github.com/smasher164/oscons/tree/boot-past-mbr)
+[QEMU](https://www.qemu.org/) is used to emulate the hardware and BIOS necessary to run the bootloader. Build and run with:
+
+```
+$ make qemu
+```

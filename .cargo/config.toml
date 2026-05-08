@@ -7,3 +7,4 @@ rustflags = ["-C", "link-arg=-Tlinker.ld"]
 [unstable]
 build-std = ["core"]
 build-std-features = ["compiler-builtins-mem"]
+json-target-spec = true
