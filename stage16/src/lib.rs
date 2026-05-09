@@ -21,94 +21,6 @@ global_asm!(
     main = sym stage16_main,
 );
 
-#[repr(C, packed)]
-struct GdtEntry {
-    limit_low: u16,
-    base_low: u16,
-    base_mid: u8,
-    access: u8,
-    limit_flags: u8, // G, DB, L, AVL in [7:4]; limit[19:16] in [3:0]
-    base_high: u8,
-}
-
-#[repr(C, packed)]
-struct Gdt {
-    null: GdtEntry,
-    code: GdtEntry,
-    data: GdtEntry,
-}
-
-static GDT: Gdt = Gdt {
-    null: GdtEntry { limit_low: 0, base_low: 0, base_mid: 0, access: 0, limit_flags: 0, base_high: 0 },
-    code: GdtEntry {
-        limit_low: 0xFFFF,
-        base_low: 0x0000,
-        base_mid: 0x00,
-        access: 0x9A,      // P=1, DPL=0, S=1, exec/read
-        limit_flags: 0xCF, // G=1, DB=1 (32-bit), limit[19:16]=0xF
-        base_high: 0x00,
-    },
-    data: GdtEntry {
-        limit_low: 0xFFFF,
-        base_low: 0x0000,
-        base_mid: 0x00,
-        access: 0x92,      // P=1, DPL=0, S=1, read/write
-        limit_flags: 0xCF,
-        base_high: 0x00,
-    },
-};
-
-// Layout required by LGDT/LIDT: 2-byte limit followed by 4-byte base address.
-#[repr(C, packed)]
-struct TablePointer {
-    limit: u16,
-    base: u32,
-}
-
-static EMPTY_IDT: TablePointer = TablePointer { limit: 0, base: 0 };
-
-// Defined in stage32/src/lib.rs; the linker resolves this across the two
-// staticlib archives.
-extern "C" {
-    fn stage32_entry() -> !;
-}
-
-#[no_mangle]
-fn stage16_main() -> ! {
-    bios_interrupt::<0x10>(0x0003); // set video mode 3 (80x25 16-color text)
-    if !enable_a20() {
-        print(b"Failed to Enter Protected Mode.");
-        panic!();
-    }
-    enter_protected_mode()
-}
-
-fn print(s: &[u8]) {
-    for &byte in s {
-        bios_interrupt::<0x10>(0x0E00 | byte as u16); // AH=0x0E (TTY output)
-    }
-}
-
-fn enable_a20() -> bool {
-    if check_a20() { return true; }
-
-    bios_interrupt::<0x15>(0x2401); // BIOS: enable A20
-    if check_a20() { return true; }
-
-    // 8042 keyboard controller method.
-    wait_kbc();
-    outb(0x64, 0xD1); // write command: write to output port
-    wait_kbc();
-    outb(0x60, 0xDF); // output port value with A20 bit set
-    wait_kbc();
-    if check_a20() { return true; }
-
-    // Fast A20 via System Control Port A. Done last because it can crash
-    // on some hardware.
-    outb(0x92, inb(0x92) | 0x02);
-    check_a20()
-}
-
 // Segment:offset pointer for 16-bit real-mode memory access. Used to reach
 // physical addresses that require a non-zero segment base, since LLVM's
 // 16-bit target truncates flat pointers > 0xFFFF.
@@ -145,6 +57,101 @@ impl SegPtr {
             options(att_syntax),
         );
     }
+}
+
+#[repr(C, packed)]
+struct GdtEntry {
+    limit_low: u16,
+    base_low: u16,
+    base_mid: u8,
+    access: u8,
+    limit_flags: u8, // G, DB, L, AVL in [7:4]; limit[19:16] in [3:0]
+    base_high: u8,
+}
+
+#[repr(C, packed)]
+struct Gdt {
+    null: GdtEntry,
+    code: GdtEntry,
+    data: GdtEntry,
+}
+
+// Layout required by LGDT/LIDT: 2-byte limit followed by 4-byte base address.
+#[repr(C, packed)]
+struct TablePointer {
+    limit: u16,
+    base: u32,
+}
+
+static GDT: Gdt = Gdt {
+    null: GdtEntry {
+        limit_low: 0,
+        base_low: 0,
+        base_mid: 0,
+        access: 0,
+        limit_flags: 0,
+        base_high: 0,
+    },
+    code: GdtEntry {
+        limit_low: 0xFFFF,
+        base_low: 0x0000,
+        base_mid: 0x00,
+        access: 0x9A,      // P=1, DPL=0, S=1, exec/read
+        limit_flags: 0xCF, // G=1, DB=1 (32-bit), limit[19:16]=0xF
+        base_high: 0x00,
+    },
+    data: GdtEntry {
+        limit_low: 0xFFFF,
+        base_low: 0x0000,
+        base_mid: 0x00,
+        access: 0x92, // P=1, DPL=0, S=1, read/write
+        limit_flags: 0xCF,
+        base_high: 0x00,
+    },
+};
+
+static EMPTY_IDT: TablePointer = TablePointer { limit: 0, base: 0 };
+
+// Defined in stage32/src/lib.rs; the linker resolves this across the two
+// staticlib archives.
+extern "C" {
+    fn stage32_entry() -> !;
+}
+
+#[no_mangle]
+fn stage16_main() -> ! {
+    bios_interrupt::<0x10>(0x0003); // set video mode 3 (80x25 16-color text)
+    if !enable_a20() {
+        print(b"Failed to Enter Protected Mode.");
+        panic!();
+    }
+    enter_protected_mode()
+}
+
+fn enable_a20() -> bool {
+    if check_a20() {
+        return true;
+    }
+
+    bios_interrupt::<0x15>(0x2401); // BIOS: enable A20
+    if check_a20() {
+        return true;
+    }
+
+    // 8042 keyboard controller method.
+    wait_kbc();
+    outb(0x64, 0xD1); // write command: write to output port
+    wait_kbc();
+    outb(0x60, 0xDF); // output port value with A20 bit set
+    wait_kbc();
+    if check_a20() {
+        return true;
+    }
+
+    // Fast A20 via System Control Port A. Done last because it can crash
+    // on some hardware.
+    outb(0x92, inb(0x92) | 0x02);
+    check_a20()
 }
 
 // Check whether the A20 line is enabled by probing whether physical addresses
@@ -204,6 +211,12 @@ fn lidt(ptr: *const TablePointer) {
     }
 }
 
+fn print(s: &[u8]) {
+    for &byte in s {
+        bios_interrupt::<0x10>(0x0E00 | byte as u16); // AH=0x0E (TTY output)
+    }
+}
+
 // Execute BIOS interrupt VECTOR with AX=ax. The const generic ensures the
 // vector is a compile-time immediate, as required by the int instruction.
 fn bios_interrupt<const VECTOR: u8>(ax: u16) {
@@ -229,6 +242,8 @@ fn inb(port: u16) -> u8 {
 #[panic_handler]
 fn panic(_: &PanicInfo) -> ! {
     loop {
-        unsafe { asm!("hlt", options(nostack, nomem, att_syntax)); }
+        unsafe {
+            asm!("hlt", options(nostack, nomem, att_syntax));
+        }
     }
 }

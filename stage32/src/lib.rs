@@ -37,7 +37,8 @@ fn stage32_main() -> ! {
 fn print(s: &str) {
     for (i, &byte) in s.as_bytes().iter().enumerate() {
         unsafe {
-            VGA.add(i).write_volatile(((WHITE_ON_BLACK as u16) << 8) | byte as u16);
+            VGA.add(i)
+                .write_volatile(((WHITE_ON_BLACK as u16) << 8) | byte as u16);
         }
     }
 }
@@ -45,6 +46,8 @@ fn print(s: &str) {
 #[panic_handler]
 fn panic(_: &PanicInfo) -> ! {
     loop {
-        unsafe { asm!("hlt", options(nostack, nomem, att_syntax)); }
+        unsafe {
+            asm!("hlt", options(nostack, nomem, att_syntax));
+        }
     }
 }

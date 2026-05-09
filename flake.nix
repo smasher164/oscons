@@ -16,6 +16,8 @@
         pkgs = import nixpkgs { inherit system; };
         rust = fenix.packages.${system}.latest.withComponents [
           "cargo"
+          "clippy"
+          "rustfmt"
           "rustc"
           "rust-src"
           "llvm-tools-preview"
