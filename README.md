@@ -10,3 +10,4 @@ Additionally, all code is released to the public domain (see the LICENSE.md file
 4. [BIOS-based Hello World Bootloader (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-helloworld-rust)
 5. [BIOS-based Bootloader entering Protected Mode (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-protected-rust)
 6. [BIOS-based Bootloader loading another sector (Rust)](https://github.com/smasher164/oscons/tree/boot-past-mbr-rust)
+7. [BIOS-based Bootloader querying the E820 memory map (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-memory-map-rust)
