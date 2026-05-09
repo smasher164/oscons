@@ -3,6 +3,7 @@
 #![allow(bad_asm_style)]
 
 use core::arch::{asm, global_asm};
+use core::fmt::Write;
 use core::panic::PanicInfo;
 
 // Save drive number before zeroing registers, set up segments and stack, then
@@ -44,13 +45,28 @@ extern "C" {
     fn stage2_entry() -> !;
 }
 
+// Represents the BIOS TTY output, available in real mode only. Each character
+// is written via interrupt 0x10 (video services).
+struct Tty;
+
+impl Write for Tty {
+    // In stage 1 section so it is reachable if called before stage 2 is loaded.
+    #[link_section = ".text.stage1"]
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        for &byte in s.as_bytes() {
+            bios_print_char(byte);
+        }
+        Ok(())
+    }
+}
+
 // BIOS sets DL to the drive number before jumping to 0x7C00. Saved here before
 // any function call can clobber it.
 #[link_section = ".data.stage1"]
 static mut DRIVE: u8 = 0;
 
 #[link_section = ".rodata.stage1"]
-static DISK_ERROR: &[u8] = b"Error reading from disk.";
+static DISK_ERROR: &str = "Error reading from disk.";
 
 #[no_mangle]
 #[link_section = ".text.stage1"]
@@ -61,7 +77,7 @@ fn stage1_main() -> ! {
             unsafe { asm!("ljmpw $0, ${0}", sym stage2_entry, options(noreturn, att_syntax)) }
         }
     }
-    print(DISK_ERROR);
+    let _ = Tty.write_str(DISK_ERROR);
     panic!()
 }
 
@@ -87,26 +103,24 @@ fn try_disk_read(drive: u8) -> bool {
     no_error != 0 && sectors_read == 1
 }
 
+#[no_mangle]
+fn stage2_main() -> ! {
+    let _ = Tty.write_str("Hello from stage 2!");
+    panic!()
+}
+
 // Lives in stage 1 memory; callable from stage 2 since stage 1 stays in RAM
 // after the disk load.
 #[link_section = ".text.stage1"]
-fn print(s: &[u8]) {
-    for &byte in s {
-        unsafe {
-            asm!(
-                "int $0x10",
-                in("ah") 0x0Eu8, // TTY print character
-                in("al") byte,
-                options(nostack, nomem, att_syntax),
-            );
-        }
+fn bios_print_char(c: u8) {
+    unsafe {
+        asm!(
+            "int $0x10",
+            in("ah") 0x0Eu8, // AH=0x0E: TTY output function
+            in("al") c,      // AL: character to print
+            options(nostack, nomem, att_syntax),
+        );
     }
-}
-
-#[no_mangle]
-fn stage2_main() -> ! {
-    print(b"Hello from stage 2!");
-    panic!()
 }
 
 // In stage 1 section so it is reachable if panic fires before stage 2 is loaded.
