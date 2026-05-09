@@ -9,3 +9,4 @@ Additionally, all code is released to the public domain (see the LICENSE.md file
 3. [BIOS-based Bootloader loading another sector](https://github.com/smasher164/oscons/tree/boot-past-mbr)
 4. [BIOS-based Hello World Bootloader (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-helloworld-rust)
 5. [BIOS-based Bootloader entering Protected Mode (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-protected-rust)
+6. [BIOS-based Bootloader loading another sector (Rust)](https://github.com/smasher164/oscons/tree/boot-past-mbr-rust)
