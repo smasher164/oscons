@@ -3,6 +3,7 @@
 #![allow(bad_asm_style)]
 
 use core::arch::{asm, global_asm};
+use core::fmt::Write;
 use core::panic::PanicInfo;
 
 global_asm!(
@@ -19,11 +20,22 @@ global_asm!(
     main = sym hello_world,
 );
 
+// Represents the BIOS TTY output, available in real mode only. Each character
+// is written via interrupt 0x10 (video services).
+struct Tty;
+
+impl Write for Tty {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        for &byte in s.as_bytes() {
+            bios_print_char(byte);
+        }
+        Ok(())
+    }
+}
+
 #[no_mangle]
 fn hello_world() -> ! {
-    for &byte in b"Hello, World!" {
-        bios_print_char(byte);
-    }
+    let _ = Tty.write_str("Hello, World!");
     panic!()
 }
 
@@ -31,8 +43,8 @@ fn bios_print_char(c: u8) {
     unsafe {
         asm!(
             "int $0x10",
-            in("ah") 0x0Eu8,
-            in("al") c,
+            in("ah") 0x0Eu8, // AH=0x0E: TTY output function
+            in("al") c,      // AL: character to print
             options(nostack, nomem, att_syntax),
         );
     }
