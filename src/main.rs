@@ -5,40 +5,113 @@
 use core::arch::{asm, global_asm};
 use core::panic::PanicInfo;
 
+// Save drive number before zeroing registers, set up segments and stack, then
+// call into Rust.
 global_asm!(
     ".att_syntax prefix",
     ".section .text.entry",
     ".global _start",
     "_start:",
+    "movb %dl, {drive}",
     "xorw %ax, %ax",
     "movw %ax, %ds",
     "movw %ax, %es",
     "movw %ax, %ss",
     "movw $0x7C00, %sp",
-    "call {main}",
-    main = sym hello_world,
+    "call {stage1_main}",
+    stage1_main = sym stage1_main,
+    drive = sym DRIVE,
 );
 
+// Reset segments and stack, then call into Rust for stage 2.
+global_asm!(
+    ".att_syntax prefix",
+    ".section .text.entry2",
+    ".global stage2_entry",
+    "stage2_entry:",
+    "xorw %ax, %ax",
+    "movw %ax, %ds",
+    "movw %ax, %es",
+    "movw %ax, %ss",
+    "movw $0x7C00, %sp",
+    "call {stage2_main}",
+    stage2_main = sym stage2_main,
+);
+
+// Label defined in global_asm! above; used to jump to stage 2 by symbol rather
+// than hardcoding 0x7E00.
+extern "C" {
+    fn stage2_entry() -> !;
+}
+
+// BIOS sets DL to the drive number before jumping to 0x7C00. Saved here before
+// any function call can clobber it.
+#[link_section = ".data.stage1"]
+static mut DRIVE: u8 = 0;
+
+#[link_section = ".rodata.stage1"]
+static DISK_ERROR: &[u8] = b"Error reading from disk.";
+
 #[no_mangle]
-fn hello_world() -> ! {
-    for &byte in b"Hello, World!" {
-        bios_print_char(byte);
+#[link_section = ".text.stage1"]
+fn stage1_main() -> ! {
+    let drive = unsafe { DRIVE };
+    for _ in 0..3 {
+        if try_disk_read(drive) {
+            unsafe { asm!("ljmpw $0, ${0}", sym stage2_entry, options(noreturn, att_syntax)) }
+        }
     }
+    print(DISK_ERROR);
     panic!()
 }
 
-fn bios_print_char(c: u8) {
+#[link_section = ".text.stage1"]
+fn try_disk_read(drive: u8) -> bool {
+    let no_error: u8;
+    let sectors_read: u8;
     unsafe {
         asm!(
-            "int $0x10",
-            in("ah") 0x0Eu8,
-            in("al") c,
-            options(nostack, nomem, att_syntax),
+            "int $0x13",
+            "setnc {ok}",
+            ok = lateout(reg_byte) no_error,
+            in("ah") 2u8,                        // read sectors
+            inlateout("al") 1u8 => sectors_read, // 1 sector; al returns count read
+            in("ch") 0u8,                        // cylinder 0
+            in("cl") 2u8,                        // sector 2
+            in("dh") 0u8,                        // head 0
+            in("dl") drive,                      // dl already has drive number
+            in("bx") 0x7E00u16,                  // load into memory at 0x7e00
+            options(att_syntax),
         );
+    }
+    no_error != 0 && sectors_read == 1
+}
+
+// Lives in stage 1 memory; callable from stage 2 since stage 1 stays in RAM
+// after the disk load.
+#[link_section = ".text.stage1"]
+fn print(s: &[u8]) {
+    for &byte in s {
+        unsafe {
+            asm!(
+                "int $0x10",
+                in("ah") 0x0Eu8, // TTY print character
+                in("al") byte,
+                options(nostack, nomem, att_syntax),
+            );
+        }
     }
 }
 
+#[no_mangle]
+fn stage2_main() -> ! {
+    print(b"Hello from stage 2!");
+    panic!()
+}
+
+// In stage 1 section so it is reachable if panic fires before stage 2 is loaded.
 #[panic_handler]
+#[link_section = ".text.stage1"]
 fn panic(_: &PanicInfo) -> ! {
     loop {
         unsafe {

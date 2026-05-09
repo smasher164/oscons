@@ -2,27 +2,18 @@ ENTRY(_start)
 
 SECTIONS {
     . = 0x7C00;
-
-    .text : {
+    .stage1 : {
         KEEP(*(.text.entry))
-        *(.text*)
+        *(.text.stage1*)
+        *(.rodata.stage1*)
+        *(.data.stage1*)
     }
-
-    .rodata : {
-        *(.rodata*)
-    }
-
-    .data : {
-        *(.data*)
-    }
-
-    /DISCARD/ : {
-        *(.eh_frame*)
-        *(.note*)
-    }
-
+    /DISCARD/ : { *(.eh_frame*) *(.note*) }
     . = 0x7C00 + 510;
-    .boot_sig : {
-        SHORT(0xAA55)
+    .boot_sig : { SHORT(0xAA55) }
+    . = 0x7E00;
+    .stage2 : {
+        KEEP(*(.text.entry2))
+        *(.text* .rodata* .data*)
     }
 }
