@@ -1,52 +1,46 @@
 #![no_std]
 #![no_main]
+#![allow(bad_asm_style)]
 
 use core::arch::{asm, global_asm};
 use core::panic::PanicInfo;
 
 global_asm!(
+    ".att_syntax prefix",
     ".section .text.entry",
     ".global _start",
     "_start:",
-    "xor ax, ax",
-    "mov ds, ax",
-    "mov es, ax",
-    "mov ss, ax",
-    "mov sp, 0x7C00",
+    "xorw %ax, %ax",
+    "movw %ax, %ds",
+    "movw %ax, %es",
+    "movw %ax, %ss",
+    "movw $0x7C00, %sp",
     "call {main}",
-    main = sym kernel_main,
+    main = sym hello_world,
 );
 
 #[no_mangle]
-fn kernel_main() -> ! {
-    print(b"Hello, World!");
-    halt()
-}
-
-fn print(s: &[u8]) {
-    for &byte in s {
+fn hello_world() -> ! {
+    for &byte in b"Hello, World!" {
         bios_print_char(byte);
     }
+    panic!()
 }
 
 fn bios_print_char(c: u8) {
     unsafe {
         asm!(
-            "int 0x10",
+            "int $0x10",
             in("ah") 0x0Eu8,
             in("al") c,
-            options(nostack, nomem),
+            options(nostack, nomem, att_syntax),
         );
-    }
-}
-
-fn halt() -> ! {
-    loop {
-        unsafe { asm!("hlt", options(nostack, nomem)); }
     }
 }
 
 #[panic_handler]
 fn panic(_: &PanicInfo) -> ! {
-    halt()
+    loop {
+        unsafe { asm!("hlt", options(nostack, nomem, att_syntax)); }
+    }
 }
