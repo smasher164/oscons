@@ -41,6 +41,8 @@ fn bios_print_char(c: u8) {
 #[panic_handler]
 fn panic(_: &PanicInfo) -> ! {
     loop {
-        unsafe { asm!("hlt", options(nostack, nomem, att_syntax)); }
+        unsafe {
+            asm!("hlt", options(nostack, nomem, att_syntax));
+        }
     }
 }
