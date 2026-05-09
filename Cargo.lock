@@ -3,5 +3,9 @@
 version = 4
 
 [[package]]
-name = "boot"
+name = "stage16"
+version = "0.1.0"
+
+[[package]]
+name = "stage32"
 version = "0.1.0"

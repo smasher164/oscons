@@ -1,10 +1,6 @@
-[package]
-name = "boot"
-version = "0.1.0"
-edition = "2021"
-
+[workspace]
+members = ["stage16", "stage32"]
+resolver = "2"
 [profile.release]
 opt-level = "s"
 lto = true
-
-[profile.dev]
