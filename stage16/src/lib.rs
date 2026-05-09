@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+// global_asm! has no options(att_syntax); the .att_syntax directive is the
+// only way to use AT&T syntax, which Rust flags as "bad_asm_style".
 #![allow(bad_asm_style)]
 
 use core::arch::{asm, global_asm};
@@ -65,6 +67,8 @@ struct TablePointer {
 
 static EMPTY_IDT: TablePointer = TablePointer { limit: 0, base: 0 };
 
+// Defined in stage32/src/lib.rs; the linker resolves this across the two
+// staticlib archives.
 extern "C" {
     fn stage32_entry() -> !;
 }
@@ -148,7 +152,7 @@ impl SegPtr {
 // 1 MiB apart, so when A20 is disabled bit 20 of the higher address is forced
 // to 0, aliasing both to the same location.
 //
-// ES=0x0000 → ES:0x0500 = 0x000500; DS=0xFFFF → DS:0x0510 = 0x100500.
+// DS=0x0000 → DS:0x0500 = 0x000500; DS=0xFFFF → DS:0x0510 = 0x100500.
 fn check_a20() -> bool {
     let p0 = SegPtr(0x0000, 0x0500);
     let p1 = SegPtr(0xFFFF, 0x0510);
@@ -181,7 +185,7 @@ fn enter_protected_mode() -> ! {
             "movl %cr0, %eax",
             "orl $1, %eax",
             "movl %eax, %cr0",
-            "ljmpl $0x8, ${target}",
+            "ljmpl $0x8, ${target}", // far jump: atomically sets CS=0x8 (code segment) and jumps
             target = sym stage32_entry,
             options(nostack, noreturn, att_syntax),
         );

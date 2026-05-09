@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+// global_asm! has no options(att_syntax); the .att_syntax directive is the
+// only way to use AT&T syntax, which Rust flags as "bad_asm_style".
 #![allow(bad_asm_style)]
 
 use core::arch::{asm, global_asm};
@@ -24,7 +26,7 @@ global_asm!(
 );
 
 const VGA: *mut u16 = 0xB8000 as *mut u16;
-const WHITE_ON_BLACK: u8 = 0x0F;
+const WHITE_ON_BLACK: u8 = 0x0F; // VGA attribute byte: high nibble = background (0=black), low nibble = foreground (F=bright white)
 
 #[no_mangle]
 fn stage32_main() -> ! {
