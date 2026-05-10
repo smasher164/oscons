@@ -1,6 +1,6 @@
 CARGO = cargo -Z build-std=core -Z build-std-features=compiler-builtins-mem -Z json-target-spec build --release
 
-boot.img: stage16/src/lib.rs stage32/src/lib.rs linker.ld stage16/i386-none-16bit.json stage32/i386-none-32bit.json
+boot.img: src/lib.rs stage16/src/lib.rs stage32/src/lib.rs linker.ld stage16/i386-none-16bit.json stage32/i386-none-32bit.json
 	$(CARGO) -p stage16 --target stage16/i386-none-16bit.json
 	$(CARGO) -p stage32 --target stage32/i386-none-32bit.json
 	ld.lld -T linker.ld --allow-multiple-definition \

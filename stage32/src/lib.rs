@@ -5,7 +5,9 @@
 #![allow(bad_asm_style)]
 
 use core::arch::{asm, global_asm};
+use core::fmt::Write;
 use core::panic::PanicInfo;
+use oscons::MemoryMap;
 
 // Reload data segment registers with the protected-mode data segment selector
 // (0x10) and call stage32_main. CS was set to 0x08 by the far jump from stage16;
@@ -28,19 +30,54 @@ global_asm!(
 const VGA: *mut u16 = 0xB8000 as *mut u16;
 const WHITE_ON_BLACK: u8 = 0x0F; // VGA attribute byte: high nibble = background (0=black), low nibble = foreground (F=bright white)
 
-#[no_mangle]
-fn stage32_main() -> ! {
-    print("Successfully entered protected mode.");
-    panic!();
+// Filled by stage16 before entering protected mode; accessible here since
+// stage16's memory remains in place after the mode switch.
+extern "C" {
+    static MEMORY_MAP: MemoryMap;
 }
 
-fn print(s: &str) {
-    for (i, &byte) in s.as_bytes().iter().enumerate() {
-        unsafe {
-            VGA.add(i)
-                .write_volatile(((WHITE_ON_BLACK as u16) << 8) | byte as u16);
+struct Vga {
+    col: usize,
+    row: usize,
+}
+
+impl Write for Vga {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        for &byte in s.as_bytes() {
+            match byte {
+                b'\n' => {
+                    self.row += 1;
+                    self.col = 0;
+                }
+                b'\r' => {
+                    self.col = 0;
+                }
+                _ => {
+                    if self.col >= 80 {
+                        self.row += 1;
+                        self.col = 0;
+                    }
+                    unsafe {
+                        VGA.add(self.row * 80 + self.col)
+                            .write_volatile(((WHITE_ON_BLACK as u16) << 8) | byte as u16);
+                    }
+                    self.col += 1;
+                }
+            }
         }
+        Ok(())
     }
+}
+
+#[no_mangle]
+fn stage32_main() -> ! {
+    let map = unsafe { &*(&raw const MEMORY_MAP) };
+    let mut vga = Vga { col: 0, row: 0 };
+    for entry in &map.entries[..map.count] {
+        let _ = write!(vga, "{entry}\r\n");
+    }
+    let _ = write!(vga, "Successfully entered protected mode.");
+    panic!()
 }
 
 #[panic_handler]

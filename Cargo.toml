@@ -1,6 +1,15 @@
+[package]
+name = "oscons"
+version = "0.1.0"
+edition = "2021"
+
 [workspace]
 members = ["stage16", "stage32"]
 resolver = "2"
+
+[workspace.dependencies]
+oscons = { path = "." }
+
 [profile.release]
 opt-level = "s"
 lto = true

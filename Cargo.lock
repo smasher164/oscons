@@ -3,9 +3,19 @@
 version = 4
 
 [[package]]
+name = "oscons"
+version = "0.1.0"
+
+[[package]]
 name = "stage16"
 version = "0.1.0"
+dependencies = [
+ "oscons",
+]
 
 [[package]]
 name = "stage32"
 version = "0.1.0"
+dependencies = [
+ "oscons",
+]
