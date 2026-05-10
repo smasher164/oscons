@@ -27,8 +27,16 @@ global_asm!(
     main = sym stage32_main,
 );
 
-const VGA: *mut u16 = 0xB8000 as *mut u16;
-const WHITE_ON_BLACK: u8 = 0x0F; // VGA attribute byte: high nibble = background (0=black), low nibble = foreground (F=bright white)
+const VGA_BUF: *mut u16 = 0xB8000 as *mut u16;
+const WHITE_ON_BLACK: u8 = 0x0F;
+
+fn vga_cell(attr: u8, ch: u8) -> u16 {
+    (attr as u16) << 8 | ch as u16
+}
+
+unsafe fn vga_write(row: usize, col: usize, val: u16) {
+    VGA_BUF.add(row * 80 + col).write_volatile(val);
+}
 
 // Filled by stage16 before entering protected mode; accessible here since
 // stage16's memory remains in place after the mode switch.
@@ -58,8 +66,7 @@ impl Write for Vga {
                         self.col = 0;
                     }
                     unsafe {
-                        VGA.add(self.row * 80 + self.col)
-                            .write_volatile(((WHITE_ON_BLACK as u16) << 8) | byte as u16);
+                        vga_write(self.row, self.col, vga_cell(WHITE_ON_BLACK, byte));
                     }
                     self.col += 1;
                 }
@@ -72,11 +79,11 @@ impl Write for Vga {
 #[no_mangle]
 fn stage32_main() -> ! {
     let map = unsafe { &*(&raw const MEMORY_MAP) };
-    let mut vga = Vga { col: 0, row: 0 };
+    let mut vga_buf = Vga { col: 0, row: 0 };
     for entry in &map.entries[..map.count] {
-        let _ = write!(vga, "{entry}\r\n");
+        let _ = write!(vga_buf, "{entry}\r\n");
     }
-    let _ = write!(vga, "Successfully entered protected mode.");
+    let _ = write!(vga_buf, "Successfully entered protected mode.");
     panic!()
 }
 
