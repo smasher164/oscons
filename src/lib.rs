@@ -1,5 +1,7 @@
 #![no_std]
 
+use core::arch::asm;
+
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq)]
 pub struct EntryType(pub u32);
@@ -112,4 +114,55 @@ impl GdtEntry {
 pub struct TablePointer {
     pub limit: u16,
     pub base: u32,
+}
+
+// Memory operand layout required by ljmpl: offset first, then selector.
+#[repr(C, packed)]
+pub struct FarPtr {
+    pub offset: u32,
+    pub selector: u16,
+}
+
+pub fn far_jump(ptr: FarPtr) -> ! {
+    unsafe { asm!("ljmpl *({0})", in(reg) &ptr, options(noreturn, att_syntax)) }
+}
+
+pub fn cli() {
+    unsafe { asm!("cli", options(nostack, nomem, att_syntax)) }
+}
+
+pub fn sti() {
+    unsafe { asm!("sti", options(nostack, nomem, att_syntax)) }
+}
+
+pub fn lgdt(ptr: *const TablePointer) {
+    unsafe { asm!("lgdt ({0})", in(reg) ptr, options(nostack, att_syntax)) }
+}
+
+pub fn lidt(ptr: *const TablePointer) {
+    unsafe { asm!("lidt ({0})", in(reg) ptr, options(nostack, att_syntax)) }
+}
+
+pub fn inb(port: u16) -> u8 {
+    let val: u8;
+    unsafe {
+        asm!("inb %dx, %al", out("al") val, in("dx") port, options(nostack, nomem, att_syntax))
+    }
+    val
+}
+
+pub fn outb(port: u16, val: u8) {
+    unsafe {
+        asm!("outb %al, %dx", in("dx") port, in("al") val, options(nostack, nomem, att_syntax))
+    }
+}
+
+pub fn read_cr0() -> usize {
+    let val: usize;
+    unsafe { asm!("mov %cr0, {0}", out(reg) val, options(nostack, att_syntax)) }
+    val
+}
+
+pub fn write_cr0(val: usize) {
+    unsafe { asm!("mov {0}, %cr0", in(reg) val, options(nostack, att_syntax)) }
 }
