@@ -105,8 +105,8 @@ static GDT: [GdtEntry; GDT_ENTRIES] = [
         limit_low: 0xFFFF,
         base_low: 0x0000,
         base_mid: 0x00,
-        access: 0x9A,      // P=1, DPL=0, S=1, exec/read
-        limit_flags: 0xCF, // G=1, DB=1 (32-bit), limit[19:16]=0xF
+        access: 0x9A,             // P=1, DPL=0, S=1, exec/read
+        limit_flags: 0b1100_1111, // G=1, DB=1, L=0, AVL=0, limit=0xF
         base_high: 0x00,
     },
     GdtEntry {
@@ -114,8 +114,8 @@ static GDT: [GdtEntry; GDT_ENTRIES] = [
         limit_low: 0xFFFF,
         base_low: 0x0000,
         base_mid: 0x00,
-        access: 0x92, // P=1, DPL=0, S=1, read/write
-        limit_flags: 0xCF,
+        access: 0x92,             // P=1, DPL=0, S=1, read/write
+        limit_flags: 0b1100_1111, // G=1, DB=1, L=0, AVL=0, limit=0xF
         base_high: 0x00,
     },
 ];
