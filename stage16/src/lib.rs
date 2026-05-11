@@ -7,7 +7,7 @@
 use core::arch::{asm, global_asm};
 use core::fmt::Write;
 use core::panic::PanicInfo;
-use oscons::{E820Entry, Gdt, GdtEntry, MemoryMap, TablePointer, MAX_E820_ENTRIES};
+use oscons::{E820Entry, GdtEntry, MemoryMap, TablePointer, GDT_ENTRIES, MAX_E820_ENTRIES};
 
 // Save drive number before zeroing registers, set up segments and stack, then
 // call into Rust.
@@ -98,16 +98,10 @@ impl SegPtr {
 const SMAP: u32 = 0x534D4150;
 const STAGE2_SECTORS: u8 = 15;
 
-static GDT: Gdt = Gdt {
-    null: GdtEntry {
-        limit_low: 0,
-        base_low: 0,
-        base_mid: 0,
-        access: 0,
-        limit_flags: 0,
-        base_high: 0,
-    },
-    code: GdtEntry {
+static GDT: [GdtEntry; GDT_ENTRIES] = [
+    GdtEntry::ZERO, // 0: null
+    GdtEntry {
+        // 1: 32-bit kernel code
         limit_low: 0xFFFF,
         base_low: 0x0000,
         base_mid: 0x00,
@@ -115,7 +109,8 @@ static GDT: Gdt = Gdt {
         limit_flags: 0xCF, // G=1, DB=1 (32-bit), limit[19:16]=0xF
         base_high: 0x00,
     },
-    data: GdtEntry {
+    GdtEntry {
+        // 2: kernel data
         limit_low: 0xFFFF,
         base_low: 0x0000,
         base_mid: 0x00,
@@ -123,7 +118,7 @@ static GDT: Gdt = Gdt {
         limit_flags: 0xCF,
         base_high: 0x00,
     },
-};
+];
 
 static EMPTY_IDT: TablePointer = TablePointer { limit: 0, base: 0 };
 

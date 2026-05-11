@@ -83,6 +83,9 @@ impl MemoryMap {
     };
 }
 
+pub const GDT_ENTRIES: usize = 3;
+
+#[derive(Clone, Copy)]
 #[repr(C, packed)]
 pub struct GdtEntry {
     pub limit_low: u16,
@@ -93,11 +96,15 @@ pub struct GdtEntry {
     pub base_high: u8,
 }
 
-#[repr(C, packed)]
-pub struct Gdt {
-    pub null: GdtEntry,
-    pub code: GdtEntry,
-    pub data: GdtEntry,
+impl GdtEntry {
+    pub const ZERO: Self = Self {
+        limit_low: 0,
+        base_low: 0,
+        base_mid: 0,
+        access: 0,
+        limit_flags: 0,
+        base_high: 0,
+    };
 }
 
 // Layout required by LGDT/LIDT: 2-byte limit followed by 4-byte base address.
