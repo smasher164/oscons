@@ -118,6 +118,15 @@ static GDT: [GdtEntry; GDT_ENTRIES] = [
         limit_flags: 0b1100_1111, // G=1, DB=1, L=0, AVL=0, limit=0xF
         base_high: 0x00,
     },
+    GdtEntry {
+        // 3: 64-bit kernel code
+        limit_low: 0xFFFF,
+        base_low: 0x0000,
+        base_mid: 0x00,
+        access: 0x9A,             // P=1, DPL=0, S=1, exec/read
+        limit_flags: 0b1010_1111, // G=1, DB=0, L=1, AVL=0, limit=0xF
+        base_high: 0x00,
+    },
 ];
 
 static EMPTY_IDT: TablePointer = TablePointer { limit: 0, base: 0 };
@@ -290,10 +299,10 @@ fn wait_kbc() {
 fn enter_protected_mode() -> ! {
     let gdt_ptr = TablePointer {
         limit: (core::mem::size_of_val(&GDT) - 1) as u16,
-        base: core::ptr::addr_of!(GDT) as u32,
+        base: (&raw const GDT) as u32,
     };
-    lgdt(core::ptr::addr_of!(gdt_ptr));
-    lidt(core::ptr::addr_of!(EMPTY_IDT));
+    lgdt(&raw const gdt_ptr);
+    lidt(&raw const EMPTY_IDT);
     unsafe {
         asm!(
             "cli",
