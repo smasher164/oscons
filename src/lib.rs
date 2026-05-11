@@ -1,5 +1,7 @@
 #![no_std]
 
+use core::arch::asm;
+
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq)]
 pub struct EntryType(pub u32);
@@ -83,7 +85,7 @@ impl MemoryMap {
     };
 }
 
-pub const GDT_ENTRIES: usize = 3;
+pub const GDT_ENTRIES: usize = 4;
 
 #[derive(Clone, Copy)]
 #[repr(C, packed)]
@@ -107,9 +109,100 @@ impl GdtEntry {
     };
 }
 
+#[repr(C, align(4096))]
+pub struct PageTable(pub [u64; 512]);
+
 // Layout required by LGDT/LIDT: 2-byte limit followed by 4-byte base address.
 #[repr(C, packed)]
 pub struct TablePointer {
     pub limit: u16,
     pub base: u32,
+}
+
+// Memory operand layout required by ljmpl: offset first, then selector.
+#[repr(C, packed)]
+pub struct FarPtr {
+    pub offset: u32,
+    pub selector: u16,
+}
+
+pub fn far_jump(ptr: FarPtr) -> ! {
+    unsafe { asm!("ljmpl *({0})", in(reg) &ptr, options(noreturn, att_syntax)) }
+}
+
+pub fn cli() {
+    unsafe { asm!("cli", options(nostack, nomem, att_syntax)) }
+}
+
+pub fn sti() {
+    unsafe { asm!("sti", options(nostack, nomem, att_syntax)) }
+}
+
+pub fn lgdt(ptr: *const TablePointer) {
+    unsafe { asm!("lgdt ({0})", in(reg) ptr, options(nostack, att_syntax)) }
+}
+
+pub fn lidt(ptr: *const TablePointer) {
+    unsafe { asm!("lidt ({0})", in(reg) ptr, options(nostack, att_syntax)) }
+}
+
+pub fn inb(port: u16) -> u8 {
+    let val: u8;
+    unsafe {
+        asm!("inb %dx, %al", out("al") val, in("dx") port, options(nostack, nomem, att_syntax))
+    }
+    val
+}
+
+pub fn outb(port: u16, val: u8) {
+    unsafe {
+        asm!("outb %al, %dx", in("dx") port, in("al") val, options(nostack, nomem, att_syntax))
+    }
+}
+
+pub fn read_cr0() -> usize {
+    let val: usize;
+    unsafe { asm!("mov %cr0, {0}", out(reg) val, options(nostack, att_syntax)) }
+    val
+}
+
+pub fn write_cr0(val: usize) {
+    unsafe { asm!("mov {0}, %cr0", in(reg) val, options(nostack, att_syntax)) }
+}
+
+pub fn read_cr3() -> usize {
+    let val: usize;
+    unsafe { asm!("mov %cr3, {0}", out(reg) val, options(nostack, att_syntax)) }
+    val
+}
+
+pub fn write_cr3(val: usize) {
+    unsafe { asm!("mov {0}, %cr3", in(reg) val, options(nostack, att_syntax)) }
+}
+
+pub fn read_cr4() -> usize {
+    let val: usize;
+    unsafe { asm!("mov %cr4, {0}", out(reg) val, options(nostack, att_syntax)) }
+    val
+}
+
+pub fn write_cr4(val: usize) {
+    unsafe { asm!("mov {0}, %cr4", in(reg) val, options(nostack, att_syntax)) }
+}
+
+pub fn read_msr(msr: u32) -> u64 {
+    let lo: u32;
+    let hi: u32;
+    unsafe {
+        asm!("rdmsr", in("ecx") msr, out("eax") lo, out("edx") hi, options(nostack, nomem, att_syntax))
+    }
+    (hi as u64) << 32 | lo as u64
+}
+
+pub fn write_msr(msr: u32, val: u64) {
+    let lo = val as u32;
+    let hi = (val >> 32) as u32;
+    unsafe {
+        asm!("wrmsr", in("ecx") msr, in("eax") lo, in("edx") hi, options(nostack, nomem, att_syntax))
+    }
 }

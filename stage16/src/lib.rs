@@ -7,7 +7,10 @@
 use core::arch::{asm, global_asm};
 use core::fmt::Write;
 use core::panic::PanicInfo;
-use oscons::{E820Entry, GdtEntry, MemoryMap, TablePointer, GDT_ENTRIES, MAX_E820_ENTRIES};
+use oscons::{
+    cli, far_jump, inb, lgdt, lidt, outb, read_cr0, write_cr0, E820Entry, FarPtr, GdtEntry,
+    MemoryMap, TablePointer, GDT_ENTRIES, MAX_E820_ENTRIES,
+};
 
 // Save drive number before zeroing registers, set up segments and stack, then
 // call into Rust.
@@ -303,49 +306,18 @@ fn enter_protected_mode() -> ! {
     };
     lgdt(&raw const gdt_ptr);
     lidt(&raw const EMPTY_IDT);
-    unsafe {
-        asm!(
-            "cli",
-            "movl %cr0, %eax",
-            "orl $1, %eax",
-            "movl %eax, %cr0",
-            "ljmpl $0x8, ${target}", // far jump: atomically sets CS=0x8 (code segment) and jumps
-            target = sym stage32_entry,
-            options(nostack, noreturn, att_syntax),
-        );
-    }
-}
-
-fn lgdt(ptr: *const TablePointer) {
-    unsafe {
-        asm!("lgdt ({0})", in(reg) ptr, options(nostack, att_syntax));
-    }
-}
-
-fn lidt(ptr: *const TablePointer) {
-    unsafe {
-        asm!("lidt ({0})", in(reg) ptr, options(nostack, att_syntax));
-    }
+    cli();
+    write_cr0(read_cr0() | 1);
+    far_jump(FarPtr {
+        selector: 0x8,
+        offset: stage32_entry as *const () as u32,
+    });
 }
 
 fn bios_interrupt<const VECTOR: u8>(ax: u16) {
     unsafe {
         asm!("int ${0}", const VECTOR, in("ax") ax, options(nostack, nomem, att_syntax));
     }
-}
-
-fn outb(port: u16, val: u8) {
-    unsafe {
-        asm!("outb %al, %dx", in("dx") port, in("al") val, options(nostack, nomem, att_syntax));
-    }
-}
-
-fn inb(port: u16) -> u8 {
-    let val: u8;
-    unsafe {
-        asm!("inb %dx, %al", out("al") val, in("dx") port, options(nostack, nomem, att_syntax));
-    }
-    val
 }
 
 // Lives in stage 1 memory; callable from stage 2 since stage 1 stays in RAM
