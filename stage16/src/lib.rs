@@ -293,10 +293,10 @@ fn wait_kbc() {
 fn enter_protected_mode() -> ! {
     let gdt_ptr = TablePointer {
         limit: (core::mem::size_of_val(&GDT) - 1) as u16,
-        base: core::ptr::addr_of!(GDT) as u32,
+        base: (&raw const GDT) as u32,
     };
-    lgdt(core::ptr::addr_of!(gdt_ptr));
-    lidt(core::ptr::addr_of!(EMPTY_IDT));
+    lgdt(&raw const gdt_ptr);
+    lidt(&raw const EMPTY_IDT);
     cli();
     write_cr0(read_cr0() | 1);
     far_jump(FarPtr {
