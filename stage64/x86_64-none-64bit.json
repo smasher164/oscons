@@ -15,5 +15,7 @@
     "panic-strategy": "abort",
     "os": "none",
     "vendor": "unknown",
-    "relocation-model": "static"
+    "relocation-model": "static",
+    "features": "-mmx,-sse,+soft-float",
+    "rustc-abi": "x86-softfloat"
 }
