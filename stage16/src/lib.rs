@@ -126,6 +126,7 @@ static GDT: [GdtEntry; GDT_ENTRIES] = [
 static EMPTY_IDT: TablePointer = TablePointer { limit: 0, base: 0 };
 
 #[no_mangle]
+#[link_section = ".data"]
 static mut MEMORY_MAP: MemoryMap = MemoryMap::ZERO;
 
 // BIOS sets DL to the drive number before jumping to 0x7C00. Saved here before

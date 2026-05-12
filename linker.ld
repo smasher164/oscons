@@ -8,7 +8,7 @@ SECTIONS {
         *libstage16.a:*(.rodata.stage1*)
         *libstage16.a:*(.data.stage1*)
     }
-    /DISCARD/ : { *(.eh_frame*) *(.note*) }
+    /DISCARD/ : { *(.eh_frame*) *(.note*) *(.bss*) }
     . = 0x7C00 + 510;
     .boot_sig : { SHORT(0xAA55) }
     . = 0x7E00;
