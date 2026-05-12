@@ -112,6 +112,56 @@ impl GdtEntry {
 #[repr(C, align(4096))]
 pub struct PageTable(pub [u64; 512]);
 
+pub const PAGE_PRESENT: u64 = 1 << 0;
+pub const PAGE_RW: u64 = 1 << 1;
+pub const PAGE_PS: u64 = 1 << 7;
+
+pub const VGA_BUF: *mut u16 = 0xB8000 as *mut u16;
+pub const WHITE_ON_BLACK: u8 = 0x0F;
+
+pub fn vga_cell(attr: u8, ch: u8) -> u16 {
+    (attr as u16) << 8 | ch as u16
+}
+
+pub unsafe fn vga_write(row: u32, col: u32, val: u16) {
+    VGA_BUF.add(row as usize * 80 + col as usize).write_volatile(val);
+}
+
+// Row and col are u32 so the layout is identical when shared between 32-bit
+// and 64-bit stages.
+#[repr(C)]
+pub struct Vga {
+    pub row: u32,
+    pub col: u32,
+}
+
+impl core::fmt::Write for Vga {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        for &byte in s.as_bytes() {
+            match byte {
+                b'\n' => {
+                    self.row += 1;
+                    self.col = 0;
+                }
+                b'\r' => {
+                    self.col = 0;
+                }
+                _ => {
+                    if self.col >= 80 {
+                        self.row += 1;
+                        self.col = 0;
+                    }
+                    unsafe {
+                        vga_write(self.row, self.col, vga_cell(WHITE_ON_BLACK, byte));
+                    }
+                    self.col += 1;
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 // Layout required by LGDT/LIDT: 2-byte limit followed by 4-byte base address.
 #[repr(C, packed)]
 pub struct TablePointer {

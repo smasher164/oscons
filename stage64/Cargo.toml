@@ -1,0 +1,10 @@
+[package]
+name = "stage64"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+oscons = { workspace = true }
+
+[lib]
+crate-type = ["staticlib"]
