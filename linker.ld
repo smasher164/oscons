@@ -8,7 +8,7 @@ SECTIONS {
         *(.rodata.stage1*)
         *(.data.stage1*)
     }
-    /DISCARD/ : { *(.eh_frame*) *(.note*) }
+    /DISCARD/ : { *(.eh_frame*) *(.note*) *(.bss*) }
     . = 0x7C00 + 510;
     .boot_sig : { SHORT(0xAA55) }
     . = 0x7E00;

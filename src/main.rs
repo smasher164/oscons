@@ -138,8 +138,9 @@ impl MemoryMap {
 
 const SMAP: u32 = 0x534D4150;
 const MAX_E820_ENTRIES: usize = 32;
-const STAGE2_SECTORS: u8 = 7;
+const STAGE2_SECTORS: u8 = 10;
 
+#[link_section = ".data"]
 static mut MEMORY_MAP: MemoryMap = MemoryMap::ZERO;
 
 // BIOS sets DL to the drive number before jumping to 0x7C00. Saved here before
