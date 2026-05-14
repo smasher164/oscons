@@ -27,15 +27,18 @@ global_asm!(
     main = sym stage32_main,
 );
 
-const VGA_BUF: *mut u16 = 0xB8000 as *mut u16;
+const VGA_COLS: u32 = 80;
+const VGA_ROWS: u32 = 25;
+const VGA_BUF: *mut [[u16; VGA_COLS as usize]; VGA_ROWS as usize] =
+    0xB8000 as *mut [[u16; VGA_COLS as usize]; VGA_ROWS as usize];
 const WHITE_ON_BLACK: u8 = 0x0F;
 
 fn vga_cell(attr: u8, ch: u8) -> u16 {
     (attr as u16) << 8 | ch as u16
 }
 
-unsafe fn vga_write(row: usize, col: usize, val: u16) {
-    VGA_BUF.add(row * 80 + col).write_volatile(val);
+unsafe fn vga_write(row: u32, col: u32, val: u16) {
+    (&raw mut (*VGA_BUF)[row as usize][col as usize]).write_volatile(val);
 }
 
 // Filled by stage16 before entering protected mode; accessible here since
@@ -45,8 +48,8 @@ extern "C" {
 }
 
 struct Vga {
-    col: usize,
-    row: usize,
+    col: u32,
+    row: u32,
 }
 
 impl Write for Vga {
@@ -61,9 +64,27 @@ impl Write for Vga {
                     self.col = 0;
                 }
                 _ => {
-                    if self.col >= 80 {
+                    if self.col >= VGA_COLS {
                         self.row += 1;
                         self.col = 0;
+                    }
+                    if self.row >= VGA_ROWS {
+                        // Scroll one row up; clear the new bottom row.
+                        for r in 1..VGA_ROWS {
+                            for c in 0..VGA_COLS {
+                                unsafe {
+                                    let val = (&raw const (*VGA_BUF)[r as usize][c as usize])
+                                        .read_volatile();
+                                    vga_write(r - 1, c, val);
+                                }
+                            }
+                        }
+                        for c in 0..VGA_COLS {
+                            unsafe {
+                                vga_write(VGA_ROWS - 1, c, vga_cell(WHITE_ON_BLACK, b' '));
+                            }
+                        }
+                        self.row = VGA_ROWS - 1;
                     }
                     unsafe {
                         vga_write(self.row, self.col, vga_cell(WHITE_ON_BLACK, byte));
@@ -77,7 +98,7 @@ impl Write for Vga {
 }
 
 #[no_mangle]
-fn stage32_main() -> ! {
+extern "C" fn stage32_main() -> ! {
     let map = unsafe { &*(&raw const MEMORY_MAP) };
     let mut vga_buf = Vga { col: 0, row: 0 };
     for entry in &map.entries[..map.count] {
