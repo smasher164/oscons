@@ -12,3 +12,4 @@ Additionally, all code is released to the public domain (see the LICENSE.md file
 6. [BIOS-based Bootloader loading another sector (Rust)](https://github.com/smasher164/oscons/tree/boot-past-mbr-rust)
 7. [BIOS-based Bootloader querying the E820 memory map (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-memory-map-rust)
 8. [BIOS-based Bootloader entering Long Mode (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-longmode-rust)
+9. [BIOS-based Bootloader loading and jumping to a Kernel (Rust)](https://github.com/smasher164/oscons/tree/boot-bios-kernel-rust)
