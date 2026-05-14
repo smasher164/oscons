@@ -34,7 +34,7 @@ impl Write for Tty {
 }
 
 #[no_mangle]
-fn hello_world() -> ! {
+extern "C" fn hello_world() -> ! {
     let _ = Tty.write_str("Hello, World!");
     panic!()
 }
