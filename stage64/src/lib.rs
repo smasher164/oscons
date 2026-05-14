@@ -44,7 +44,7 @@ extern "C" {
 }
 
 #[no_mangle]
-fn stage64_main() -> ! {
+extern "C" fn stage64_main() -> ! {
     #[allow(clippy::deref_addrof)]
     let vga = unsafe { &mut *(&raw mut VGA) };
 

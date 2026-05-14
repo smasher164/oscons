@@ -116,9 +116,10 @@ pub const PAGE_PRESENT: u64 = 1 << 0;
 pub const PAGE_RW: u64 = 1 << 1;
 pub const PAGE_PS: u64 = 1 << 7;
 
-pub const VGA_BUF: *mut u16 = 0xB8000 as *mut u16;
 pub const VGA_COLS: u32 = 80;
 pub const VGA_ROWS: u32 = 25;
+pub const VGA_BUF: *mut [[u16; VGA_COLS as usize]; VGA_ROWS as usize] =
+    0xB8000 as *mut [[u16; VGA_COLS as usize]; VGA_ROWS as usize];
 pub const WHITE_ON_BLACK: u8 = 0x0F;
 
 pub fn vga_cell(attr: u8, ch: u8) -> u16 {
@@ -126,9 +127,7 @@ pub fn vga_cell(attr: u8, ch: u8) -> u16 {
 }
 
 pub unsafe fn vga_write(row: u32, col: u32, val: u16) {
-    VGA_BUF
-        .add(row as usize * 80 + col as usize)
-        .write_volatile(val);
+    (&raw mut (*VGA_BUF)[row as usize][col as usize]).write_volatile(val);
 }
 
 // Row and col are u32 so the layout is identical when shared between 32-bit
@@ -141,8 +140,10 @@ pub struct Vga {
 
 impl Vga {
     pub fn clear(&mut self) {
-        for i in 0..VGA_ROWS * VGA_COLS {
-            unsafe { vga_write(i / VGA_COLS, i % VGA_COLS, vga_cell(WHITE_ON_BLACK, b' ')) };
+        for row in 0..VGA_ROWS {
+            for col in 0..VGA_COLS {
+                unsafe { vga_write(row, col, vga_cell(WHITE_ON_BLACK, b' ')) };
+            }
         }
         self.row = 0;
         self.col = 0;
@@ -161,9 +162,27 @@ impl core::fmt::Write for Vga {
                     self.col = 0;
                 }
                 _ => {
-                    if self.col >= 80 {
+                    if self.col >= VGA_COLS {
                         self.row += 1;
                         self.col = 0;
+                    }
+                    if self.row >= VGA_ROWS {
+                        // Scroll one row up; clear the new bottom row.
+                        for r in 1..VGA_ROWS {
+                            for c in 0..VGA_COLS {
+                                unsafe {
+                                    let val = (&raw const (*VGA_BUF)[r as usize][c as usize])
+                                        .read_volatile();
+                                    vga_write(r - 1, c, val);
+                                }
+                            }
+                        }
+                        for c in 0..VGA_COLS {
+                            unsafe {
+                                vga_write(VGA_ROWS - 1, c, vga_cell(WHITE_ON_BLACK, b' '));
+                            }
+                        }
+                        self.row = VGA_ROWS - 1;
                     }
                     unsafe {
                         vga_write(self.row, self.col, vga_cell(WHITE_ON_BLACK, byte));
@@ -271,7 +290,10 @@ pub fn write_msr(msr: u32, val: u64) {
     }
 }
 
-// Passed from stage64 to the kernel entry point.
+// Passed from stage64 to the kernel entry point. The pointers are low-half
+// physical addresses that resolve only because stage32's PML4[0] identity
+// map is still active; the kernel must copy what it needs out of these
+// regions before tearing the identity map down.
 #[repr(C)]
 pub struct BootInfo {
     pub kernel_virt_base: u64,

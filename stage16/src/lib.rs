@@ -157,7 +157,7 @@ extern "C" {
 
 #[no_mangle]
 #[link_section = ".text.stage1"]
-fn stage1_main() -> ! {
+extern "C" fn stage1_main() -> ! {
     let drive = unsafe { DRIVE };
     for _ in 0..3 {
         if try_disk_read(drive) {
@@ -191,7 +191,7 @@ fn try_disk_read(drive: u8) -> bool {
 }
 
 #[no_mangle]
-fn stage2_main() -> ! {
+extern "C" fn stage2_main() -> ! {
     bios_interrupt::<0x10>(0x0003); // set video mode 3 (80x25 16-color text)
     let map = unsafe { &mut *(&raw mut MEMORY_MAP) };
     query_memory_map(map);
