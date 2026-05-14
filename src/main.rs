@@ -70,7 +70,7 @@ static DISK_ERROR: &str = "Error reading from disk.";
 
 #[no_mangle]
 #[link_section = ".text.stage1"]
-fn stage1_main() -> ! {
+extern "C" fn stage1_main() -> ! {
     let drive = unsafe { DRIVE };
     for _ in 0..3 {
         if try_disk_read(drive) {
@@ -104,7 +104,7 @@ fn try_disk_read(drive: u8) -> bool {
 }
 
 #[no_mangle]
-fn stage2_main() -> ! {
+extern "C" fn stage2_main() -> ! {
     let _ = Tty.write_str("Hello from stage 2!");
     panic!()
 }
