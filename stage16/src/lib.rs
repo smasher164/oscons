@@ -317,7 +317,7 @@ fn enter_protected_mode() -> ! {
 
 fn bios_interrupt<const VECTOR: u8>(ax: u16) {
     unsafe {
-        asm!("int ${0}", const VECTOR, in("ax") ax, options(nostack, nomem, att_syntax));
+        asm!("int ${0}", const VECTOR, in("ax") ax, options(nostack, att_syntax));
     }
 }
 
@@ -330,7 +330,7 @@ fn bios_print_char(c: u8) {
             "int $0x10",
             in("ah") 0x0Eu8, // AH=0x0E: TTY output function
             in("al") c,      // AL: character to print
-            options(nostack, nomem, att_syntax),
+            options(nostack, att_syntax),
         );
     }
 }
