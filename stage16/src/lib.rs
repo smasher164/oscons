@@ -99,7 +99,11 @@ impl SegPtr {
 }
 
 const SMAP: u32 = 0x534D4150;
-const STAGE2_SECTORS: u8 = 55;
+// One INT 13/AH=02 call addresses sectors by CHS. Track 0 on a standard
+// HDD geometry has 63 sectors, of which sector 1 is the MBR; reading 62
+// sectors starting at sector 2 covers the rest of track 0 in a single
+// call. The Makefile asserts boot.img fits in 63 sectors.
+const STAGE2_SECTORS: u8 = 62;
 
 static GDT: [GdtEntry; GDT_ENTRIES] = [
     GdtEntry::ZERO, // 0: null

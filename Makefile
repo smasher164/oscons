@@ -11,9 +11,9 @@ boot.img: src/lib.rs stage16/src/lib.rs stage32/src/lib.rs stage64/src/lib.rs ke
 		target/i386-none-16bit/release/libstage16.a \
 		target/i386-none-32bit/release/libstage32.a \
 		-o boot12.elf
-	# Link the kernel as a position-independent ELF at virtual address 0.
-	# stage64 will parse and expand it at runtime.
-	ld.lld -T kernel/linker.ld --no-dynamic-linker --gc-sections \
+	# Link the kernel as ET_DYN (PIE) so absolute references emit
+	# R_X86_64_RELATIVE relocations that stage64 applies at load time.
+	ld.lld -T kernel/linker.ld -pie --no-dynamic-linker --gc-sections \
 		target/x86_64-none-kernel/release/libkernel.a \
 		-o kernel.elf
 	# stage64 references symbols defined in stage32 (PML4, PDPT, VGA,
@@ -43,6 +43,10 @@ boot.img: src/lib.rs stage16/src/lib.rs stage32/src/lib.rs stage64/src/lib.rs ke
 	objcopy -O binary boot12.elf boot12.bin
 	objcopy -O binary stage64.elf stage64.bin
 	cat boot12.bin stage64.bin kernel.elf > boot.img
+	# stage1 reads 62 sectors past the MBR via INT 13/AH=02 (one CHS call,
+	# bounded by 63 sectors/track). Fail the build before flashing an image
+	# whose tail would be truncated at load time.
+	test $$(wc -c < boot.img) -le 32256
 
 qemu: boot.img
 	qemu-system-x86_64 -drive format=raw,file=boot.img -cpu qemu64,+rdrand

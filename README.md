@@ -6,7 +6,7 @@ The boot sequence is:
 1. Stage 1 (MBR): saves the drive number, loads subsequent sectors from disk, and jumps to stage 2.
 2. Stage 2 (real mode): queries the E820 memory map via BIOS interrupt, enables the A20 line, loads the GDT, and enters protected mode.
 3. Stage 3 (protected mode): displays the memory map via VGA text mode, sets up a PML4→PDPT identity map covering the first 1 GB using 1 GB pages, enables PAE and long mode (EFER.LME), enables paging, and far-jumps to the 64-bit code segment.
-4. Stage 4 (long mode): picks a random upper-half PML4 slot (index 256–511) for the kernel, parses the kernel ELF appended to the disk image, expands each `PT_LOAD` segment into memory immediately after the disk image, and far-jumps to the kernel entry point with a pointer to `BootInfo` (containing the kernel virtual base, memory map pointer, and PML4 pointer).
+4. Stage 4 (long mode): picks a random upper-half PML4 slot (index 256–511) for the kernel, parses the kernel ELF appended to the disk image, expands each `PT_LOAD` segment into memory immediately after the disk image, walks `.rela.dyn` and applies each `R_X86_64_RELATIVE` entry so that absolute pointers baked into the kernel's `.data` and `.rodata` resolve to its upper-half virtual address, and far-jumps to the kernel entry point with a pointer to `BootInfo` (containing the kernel virtual base, memory map pointer, and PML4 pointer).
 5. Kernel: receives `BootInfo` and runs in the upper half of the virtual address space.
 
 [QEMU](https://www.qemu.org/) is used to emulate the hardware and BIOS necessary to run the bootloader. Build and run with:

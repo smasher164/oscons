@@ -7,7 +7,7 @@
     "linker-flavor": "ld.lld",
     "linker": "ld.lld",
     "llvm-target": "x86_64-unknown-none",
-    "position-independent-executables": false,
+    "position-independent-executables": true,
     "disable-redzone": true,
     "target-c-int-width": 32,
     "target-pointer-width": 64,
