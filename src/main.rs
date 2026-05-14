@@ -45,7 +45,7 @@ fn bios_print_char(c: u8) {
             "int $0x10",
             in("ah") 0x0Eu8, // AH=0x0E: TTY output function
             in("al") c,      // AL: character to print
-            options(nostack, nomem, att_syntax),
+            options(nostack, att_syntax),
         );
     }
 }
