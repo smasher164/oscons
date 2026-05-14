@@ -31,7 +31,7 @@ extern "C" {
 }
 
 #[no_mangle]
-fn stage64_main() -> ! {
+extern "C" fn stage64_main() -> ! {
     let vga = unsafe { &mut *(&raw mut VGA) };
     let _ = write!(vga, "Entered long mode.");
     panic!()

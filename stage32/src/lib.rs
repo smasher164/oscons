@@ -58,7 +58,7 @@ static mut PDPT: PageTable = PageTable([0u64; 512]);
 static mut VGA: Vga = Vga { row: 0, col: 0 };
 
 #[no_mangle]
-fn stage32_main() -> ! {
+extern "C" fn stage32_main() -> ! {
     let map = unsafe { &*(&raw const MEMORY_MAP) };
     let vga = unsafe { &mut *(&raw mut VGA) };
     for entry in &map.entries[..map.count] {
