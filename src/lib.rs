@@ -117,6 +117,8 @@ pub const PAGE_RW: u64 = 1 << 1;
 pub const PAGE_PS: u64 = 1 << 7;
 
 pub const VGA_BUF: *mut u16 = 0xB8000 as *mut u16;
+pub const VGA_COLS: u32 = 80;
+pub const VGA_ROWS: u32 = 25;
 pub const WHITE_ON_BLACK: u8 = 0x0F;
 
 pub fn vga_cell(attr: u8, ch: u8) -> u16 {
@@ -124,7 +126,9 @@ pub fn vga_cell(attr: u8, ch: u8) -> u16 {
 }
 
 pub unsafe fn vga_write(row: u32, col: u32, val: u16) {
-    VGA_BUF.add(row as usize * 80 + col as usize).write_volatile(val);
+    VGA_BUF
+        .add(row as usize * 80 + col as usize)
+        .write_volatile(val);
 }
 
 // Row and col are u32 so the layout is identical when shared between 32-bit
@@ -133,6 +137,16 @@ pub unsafe fn vga_write(row: u32, col: u32, val: u16) {
 pub struct Vga {
     pub row: u32,
     pub col: u32,
+}
+
+impl Vga {
+    pub fn clear(&mut self) {
+        for i in 0..VGA_ROWS * VGA_COLS {
+            unsafe { vga_write(i / VGA_COLS, i % VGA_COLS, vga_cell(WHITE_ON_BLACK, b' ')) };
+        }
+        self.row = 0;
+        self.col = 0;
+    }
 }
 
 impl core::fmt::Write for Vga {
@@ -254,5 +268,34 @@ pub fn write_msr(msr: u32, val: u64) {
     let hi = (val >> 32) as u32;
     unsafe {
         asm!("wrmsr", in("ecx") msr, in("eax") lo, in("edx") hi, options(nostack, nomem, att_syntax))
+    }
+}
+
+// Passed from stage64 to the kernel entry point.
+#[repr(C)]
+pub struct BootInfo {
+    pub kernel_virt_base: u64,
+    pub memory_map: *const MemoryMap,
+    pub pml4: *mut PageTable,
+}
+
+// Retries until the hardware RNG has entropy available (CF=1).
+#[cfg(target_arch = "x86_64")]
+pub fn rdrand64() -> u64 {
+    loop {
+        let val: u64;
+        let ok: u8;
+        unsafe {
+            asm!(
+                "rdrand {val}",
+                "setc {ok}",
+                val = out(reg) val,
+                ok = lateout(reg_byte) ok,
+                options(nostack, nomem, att_syntax),
+            );
+        }
+        if ok != 0 {
+            return val;
+        }
     }
 }

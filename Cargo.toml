@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace]
-members = ["stage16", "stage32", "stage64"]
+members = ["stage16", "stage32", "stage64", "kernel"]
 resolver = "2"
 
 [workspace.dependencies]

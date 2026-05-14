@@ -1,11 +1,10 @@
 [package]
-name = "stage64"
+name = "kernel"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 oscons = { workspace = true }
-elf = { version = "0.7", default-features = false }
 
 [lib]
 crate-type = ["staticlib"]

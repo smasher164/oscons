@@ -46,8 +46,10 @@ const EFER_LME: u64 = 1 << 8;
 const CR4_PAE: usize = 1 << 5;
 const CR0_PG: usize = 1 << 31;
 
+#[no_mangle]
 #[link_section = ".data"]
 static mut PML4: PageTable = PageTable([0u64; 512]);
+#[no_mangle]
 #[link_section = ".data"]
 static mut PDPT: PageTable = PageTable([0u64; 512]);
 

@@ -99,7 +99,7 @@ impl SegPtr {
 }
 
 const SMAP: u32 = 0x534D4150;
-const STAGE2_SECTORS: u8 = 48;
+const STAGE2_SECTORS: u8 = 55;
 
 static GDT: [GdtEntry; GDT_ENTRIES] = [
     GdtEntry::ZERO, // 0: null

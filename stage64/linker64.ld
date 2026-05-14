@@ -6,10 +6,7 @@ SECTIONS {
     .text : { *(.text*) }
     .rodata : { *(.rodata*) }
     .data : { *(.data*) }
-    /DISCARD/ : { *(.eh_frame*) *(.note*) }
-    .bss (NOLOAD) : {
-        __stage64_bss_start = .;
-        *(.bss*)
-        __stage64_bss_end = .;
-    }
+    /DISCARD/ : { *(.eh_frame*) *(.note*) *(.bss*) }
+    boot_end = .;
+    kernel_end = boot_end + KERNEL_SIZE;
 }
